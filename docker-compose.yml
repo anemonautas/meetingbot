@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  meeting-bot:
+    build: ./meet-asbot/.
+    ports:
+      - "8080:8080"
+    volumes:
+      - /home/adrian/eureka/anemonautas_sl/tango_recorder/recordings:/output
+    shm_size: "2g"
+    restart: unless-stopped
