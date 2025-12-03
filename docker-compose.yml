@@ -1,11 +1,15 @@
-version: "3.9"
-
 services:
   meeting-bot:
     build: ./meet-asbot/.
+    environment:
+      - GCS_BUCKET=anemophotoser
+      - GCS_PREFIX=
+      - GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/creds.json
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     ports:
       - "8080:8080"
     volumes:
+      - /home/adrian/eureka/anemonautas_sl/tango_recorder/.keys/key.json:/etc/secrets/creds.json:ro
       - /home/adrian/eureka/anemonautas_sl/tango_recorder/recordings:/output
     shm_size: "2g"
     restart: unless-stopped

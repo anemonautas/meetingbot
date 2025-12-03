@@ -20,6 +20,7 @@ from .browser import take_screenshot, safe_click
 from .meeting import join_meeting
 from .gcs import upload_recordings_to_gcs
 from .js_scripts import CHECK_TEXT_PRESENCE_JS, FIND_AND_CLICK_JS
+from .gemini import gemini_transcription
 
 
 def _wait_dom_ready(driver, timeout=30):
@@ -42,7 +43,7 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
 
     output_video = os.path.join(task_dir, "recording.mp4")
     output_audio = os.path.join(task_dir, "audio.wav")       # siempre que record_audio sea True
-    ffmpeg_log = os.path.join(task_dir, "ffmpeg.log")
+
     ffmpeg_video_log = os.path.join(task_dir, "ffmpeg_video.log")
     ffmpeg_audio_log = os.path.join(task_dir, "ffmpeg_audio.log")
 
@@ -70,7 +71,7 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
 
     service = Service()
     driver = None
-    ffmpeg_process = None
+
     ffmpeg_video_process = None
     ffmpeg_audio_process = None
 
@@ -124,7 +125,7 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
                 logger.error(f"[{task_id}] ❌ ffmpeg AUDIO no arrancó. Ver {ffmpeg_audio_log}")
                 raise RuntimeError("ffmpeg audio failed startup")
 
-# 6) Lanzar ffmpeg de VÍDEO (sólo vídeo, sin audio)
+        # 6) Lanzar ffmpeg de VÍDEO (sólo vídeo, sin audio)
         if record_video:
             cmd_video = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -157,8 +158,6 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
             "meeting ended", "finalizó la reunión",
             "thank you for attending",
         ]
-        def proc_alive(p):
-            return p is not None and p.poll() is None
 
         while (time.time() - start_time) < max_duration:
             # ffmpeg sigue vivo
@@ -251,8 +250,19 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
                 shutil.rmtree(profile_path, ignore_errors=True)
 
         # 7) Upload sólo si existe el fichero
-        if os.path.exists(output_video):
-            upload_recordings_to_gcs(task_id, output_video)
+        if record_audio and os.path.exists(output_audio):
+            upload_recordings_to_gcs(task_id, output_audio, "audio.wav")
+
+            logger.info(f"[{task_id}] 🎙️ Transcribiendo audio con Gemini...")
+            transcript = gemini_transcription(output_audio)
+            logger.info(f"[{task_id}] 🎙️ Transcripción terminada.")
+            logger.info(f"[{task_id}] 🎙️ Transcripción: {transcript}")
+
+        else:
+            logger.warning(f"[{task_id}] No se encontró {output_audio}, no se sube nada.")
+        
+        if record_video and os.path.exists(output_video):
+            upload_recordings_to_gcs(task_id, output_video, "video.mp4")
         else:
             logger.warning(f"[{task_id}] No se encontró {output_video}, no se sube nada.")
 

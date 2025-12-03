@@ -61,9 +61,9 @@ def upload_recordings_to_gcs(task_id, video_path, audio_path):
             logger.info(f"Uploaded video: gs://{GCS_BUCKET}/{base}/recording.mp4")
             
         if audio_path and os.path.exists(audio_path):
-            blob = bucket.blob(f"{base}/debug_audio.wav")
+            blob = bucket.blob(f"{base}/audio.wav")
             blob.upload_from_filename(audio_path)
-            logger.info(f"Uploaded audio: gs://{GCS_BUCKET}/{base}/debug_audio.wav")
+            logger.info(f"Uploaded audio: gs://{GCS_BUCKET}/{base}/audio.wav")
     except Exception as e:
         logger.error(f"GCS Upload failed: {e}")
 
@@ -336,7 +336,7 @@ def record_task(meeting_url, max_duration, task_id):
     if not os.path.exists(task_dir): os.makedirs(task_dir)
     
     output_video = os.path.join(task_dir, "recording.mp4")
-    output_audio = os.path.join(task_dir, "debug_audio.wav")
+    output_audio = os.path.join(task_dir, "audio.wav")
     ffmpeg_log = os.path.join(task_dir, "ffmpeg.log")
     
     # 1. Setup y obtención del nombre REAL de la fuente

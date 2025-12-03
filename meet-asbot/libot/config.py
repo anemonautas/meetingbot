@@ -1,6 +1,6 @@
 import os
 
-# --- CONFIGURATION ---
+
 AVATAR_IMAGE = os.environ.get("AVATAR_IMAGE", "/app/assets/avatar.png")
 AVATAR_Y4M = os.environ.get("AVATAR_Y4M", "/app/assets/avatar.mp4")
 AVATAR_RESOLUTION = os.environ.get("AVATAR_RESOLUTION", "1280x720")

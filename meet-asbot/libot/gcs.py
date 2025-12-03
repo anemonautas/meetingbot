@@ -3,8 +3,7 @@ from google.cloud import storage
 from .config import GCS_BUCKET, GCS_PREFIX
 from .logger import logger
 
-# --- GCS UPLOAD ---
-def upload_recordings_to_gcs(task_id, video_path):
+def upload_recordings_to_gcs(task_id, path, file_name = "recording.mp4"):
     """
     Uploads the resulting video to Google Cloud Storage.
     """
@@ -17,12 +16,12 @@ def upload_recordings_to_gcs(task_id, video_path):
         bucket = client.bucket(GCS_BUCKET)
         base = f"{GCS_PREFIX}/{task_id}" if GCS_PREFIX else task_id
         
-        if video_path and os.path.exists(video_path):
-            blob = bucket.blob(f"{base}/recording.mp4")
-            blob.upload_from_filename(video_path)
-            logger.info(f"✅ Uploaded video: gs://{GCS_BUCKET}/{base}/recording.mp4")
+        if path and os.path.exists(path):
+            blob = bucket.blob(f"{base}/{file_name}")
+            blob.upload_from_filename(path)
+            logger.info(f"✅ Uploaded file: gs://{GCS_BUCKET}/{base}/{file_name}")
         else:
-            logger.error(f"❌ Video file not found for upload: {video_path}")
+            logger.error(f"❌ File not found for upload: {path}")
             
     except Exception as e:
         logger.error(f"❌ GCS Upload failed: {e}")
