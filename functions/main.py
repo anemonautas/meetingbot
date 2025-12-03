@@ -54,7 +54,6 @@ def expose_to_gemini(cloud_event):
     bucket_name = data["bucket"]
     file_name = data["name"]
     
-    # Simple filter to ensure we only process .wav files
     if not file_name.lower().endswith(".wav"):
         print(f"Skipping non-wav file: {file_name}")
         return

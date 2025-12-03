@@ -1,7 +1,7 @@
 import os
 from google import genai
 
-MODEL_ID = "gemini-flash-lite-latest"
+MODEL_ID = "gemini-flash-latest"
 
 def gemini_transcription(file_name):
     """
@@ -24,9 +24,6 @@ def gemini_transcription(file_name):
                 "Listen to this audio file and provide a concise transcription of what was said."
             ]
         )
-    print("-" * 20)
-    print(f"BRIEF FOR {file_name}:")
-    print(response.text)
-    print("-" * 20)    
     return response.text
+
 
