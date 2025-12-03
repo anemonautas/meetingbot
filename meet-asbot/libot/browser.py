@@ -1,9 +1,8 @@
 import os
-from .logger import logger
-from .config import OUTPUT_DIR
-from .js_scripts import FIND_AND_CLICK_JS
+from libot.logger import logger
+from libot.config import OUTPUT_DIR
+from libot.js_scripts import FIND_AND_CLICK_JS
 
-# --- BROWSER AUTOMATION ---
 
 def take_screenshot(driver, task_id, name):
     try:

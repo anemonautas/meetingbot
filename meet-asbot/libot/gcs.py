@@ -1,7 +1,7 @@
 import os
 from google.cloud import storage
-from .config import GCS_BUCKET, GCS_PREFIX
-from .logger import logger
+from libot.config import GCS_BUCKET, GCS_PREFIX
+from libot.logger import logger
 
 def upload_recordings_to_gcs(task_id, path, file_name = "recording.mp4"):
     """

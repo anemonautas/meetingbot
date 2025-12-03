@@ -25,6 +25,18 @@ RUN apt-get update && \
     && apt-get update && apt-get install -y --no-install-recommends \
         google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
+# After installing google-chrome-stable
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') && \
+    MAJOR_VERSION=${CHROME_VERSION%%.*} && \
+    wget -O /tmp/chromedriver.zip \
+      "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" && \
+    unzip /tmp/chromedriver.zip -d /usr/local/bin && \
+    mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
+    chmod +x /usr/local/bin/chromedriver && \
+    rm -rf /tmp/chromedriver*
+
+ENV XDG_RUNTIME_DIR=/tmp/runtime-dir
+RUN mkdir -p /tmp/runtime-dir && chmod 700 /tmp/runtime-dir
 
 # Instalar uv y limpiar residuos de instalación
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \

@@ -3,9 +3,9 @@
 import time
 from selenium.webdriver.common.by import By
 
-from .logger import logger
-from .browser import safe_click, take_screenshot
-from .js_scripts import FILL_INPUT_JS, FIND_AND_CLICK_JS
+from libot.logger import logger
+from libot.browser import safe_click, take_screenshot
+from libot.js_scripts import FILL_INPUT_JS, FIND_AND_CLICK_JS
 
 def _is_in_meeting(driver) -> bool:
     """

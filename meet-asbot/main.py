@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime
 from flask import Flask, request, jsonify
 
-# Import from libot package
 from libot.config import DISPLAY_NUM
 from libot.logger import logger
 from libot.recorder import record_task

@@ -1,8 +1,6 @@
 import subprocess
 import time
-from .logger import logger
-
-# --- AUDIO SETUP ---
+from libot.logger import logger
 
 def get_monitor_source():
     """

@@ -1,6 +1,4 @@
-# --- JAVASCRIPT HELPERS ---
 
-# Improved: checks visibility and handles shadow DOM loosely via recursion
 FIND_AND_CLICK_JS = """
     var searchTextOptions = arguments[0];
     var tag = arguments[1];

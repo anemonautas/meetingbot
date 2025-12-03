@@ -21,7 +21,7 @@ def gemini_transcription(file_name):
             model=MODEL_ID,
             contents=[
                 sample_file, 
-                "Listen to this audio file and provide a concise transcription of what was said."
+                "Extract a complete transcript labeling the different speakers."
             ]
         )
     return response.text

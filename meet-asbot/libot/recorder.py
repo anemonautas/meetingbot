@@ -59,6 +59,10 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
     avatar_y4m = ensure_avatar_y4m()
 
     chrome_options = Options()
+    chrome_options.binary_location = "/usr/bin/google-chrome"  # explicit, given your Dockerfile
+
+    chrome_options.add_argument("--headless=new")              # important
+
     chrome_options.add_argument(f"--user-data-dir=/tmp/profile_{task_id}")
     chrome_options.add_argument("--disable-features=AudioServiceOutOfProcess")
     chrome_options.add_argument("--no-sandbox")
@@ -70,16 +74,16 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
 
+    chrome_options.add_argument("--use-fake-device-for-media-stream")
+    chrome_options.add_argument("--use-fake-ui-for-media-stream")
+
     if avatar_y4m:
         chrome_options.add_argument(f"--use-file-for-fake-video-capture={avatar_y4m}")
-    else:
-        chrome_options.add_argument("--use-fake-device-for-media-stream")
 
-    chrome_options.add_argument("--use-fake-ui-for-media-stream")
     logger.debug(f"[{task_id}] Opciones de Chrome: {chrome_options}")
 
-    service = Service()
-    driver = None
+    service = Service("/usr/local/bin/chromedriver")
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     ffmpeg_video_process = None
     ffmpeg_audio_process = None
@@ -88,7 +92,7 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
 
     try:
         logger.info(f"[{task_id}] Lanzando Chrome...")
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+
         logger.info(f"[{task_id}] Driver de Chrome: {driver}")
 
         logger.info(f"[{task_id}] Abriendo URL de reunión: {meeting_url}")
