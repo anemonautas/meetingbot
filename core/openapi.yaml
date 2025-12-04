@@ -1,0 +1,62 @@
+openapi: 3.0.3
+info:
+  title: Tango Recorder API
+  description: API for triggering the recording bot.
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /:
+    post:
+      summary: Trigger the recording bot
+      description: Starts a background task to record a meeting or session from a given URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  description: The URL to record.
+                  example: "https://meet.google.com/abc-defg-hij"
+                duration:
+                  type: integer
+                  description: Duration of the recording in seconds.
+                  default: 3600
+                record_audio:
+                  type: boolean
+                  description: Whether to record audio.
+                  default: true
+                record_video:
+                  type: boolean
+                  description: Whether to record video.
+                  default: false
+      responses:
+        '202':
+          description: Recording started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "started"
+                  task_id:
+                    type: string
+                    description: Unique identifier for the recording task.
+                    example: "2023-10-27_10-00-00_a1b2c3d4"
+        '400':
+          description: Invalid request (missing URL)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Missing 'url'"

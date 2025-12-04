@@ -34,6 +34,44 @@ def _wait_dom_ready(driver, timeout=30):
     return False
 
 
+def build_driver(task_id: str, avatar_y4m: str | None, task_dir: str):
+    opts = Options()
+    opts.binary_location = "/usr/bin/google-chrome"
+
+    # Flags mínimas para contenedor
+    opts.add_argument("--headless=new")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--remote-debugging-port=9222")
+    opts.add_argument("--window-size=1920,1080")
+
+    opts.add_argument("--autoplay-policy=no-user-gesture-required")
+    opts.add_argument("--lang=en-US")
+    opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+    opts.add_experimental_option("useAutomationExtension", False)
+
+    opts.add_argument("--use-fake-device-for-media-stream")
+    opts.add_argument("--use-fake-ui-for-media-stream")
+
+    if avatar_y4m:
+        opts.add_argument(f"--use-file-for-fake-video-capture={avatar_y4m}")
+
+    opts.add_argument(f"--user-data-dir=/tmp/profile_{task_id}")
+
+    # logging extra
+    opts.add_argument("--enable-logging=stderr")
+    opts.add_argument("--v=1")
+
+    service = Service(
+        "/usr/local/bin/chromedriver",
+        log_path=os.path.join(task_dir, "chromedriver.log"),
+    )
+
+    return webdriver.Chrome(service=service, options=opts)
+
+
+
 def record_task(meeting_url, max_duration, task_id, record_audio=True, record_video=True):
     logger.info(f"[{task_id}] Iniciando proceso de grabación...")
     task_dir = os.path.join(OUTPUT_DIR, task_id)
@@ -57,46 +95,27 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
     logger.debug(f"[{task_id}] Fuente de audio: {audio_source}")
 
     avatar_y4m = ensure_avatar_y4m()
-
-    chrome_options = Options()
-    chrome_options.binary_location = "/usr/bin/google-chrome"  # explicit, given your Dockerfile
-
-    chrome_options.add_argument("--headless=new")              # important
-
-    chrome_options.add_argument(f"--user-data-dir=/tmp/profile_{task_id}")
-    chrome_options.add_argument("--disable-features=AudioServiceOutOfProcess")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("--autoplay-policy=no-user-gesture-required")
-    chrome_options.add_argument("--lang=en-US")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-
-    chrome_options.add_argument("--use-fake-device-for-media-stream")
-    chrome_options.add_argument("--use-fake-ui-for-media-stream")
-
-    if avatar_y4m:
-        chrome_options.add_argument(f"--use-file-for-fake-video-capture={avatar_y4m}")
-
-    logger.debug(f"[{task_id}] Opciones de Chrome: {chrome_options}")
-
-    service = Service("/usr/local/bin/chromedriver")
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
+    ffmpeg_video_process = None
+    ffmpeg_audio_process = None
+    stop_audio_enforcer = threading.Event()
 
     ffmpeg_video_process = None
     ffmpeg_audio_process = None
 
     stop_audio_enforcer = threading.Event()
+    driver = None
 
     try:
         logger.info(f"[{task_id}] Lanzando Chrome...")
 
-        logger.info(f"[{task_id}] Driver de Chrome: {driver}")
+        driver =  build_driver(task_id, avatar_y4m, task_dir)
+
+        logger.info(f"[{task_id}] Driver de Chrome creado: {driver}")
 
         logger.info(f"[{task_id}] Abriendo URL de reunión: {meeting_url}")
         driver.get(meeting_url)
+
         _wait_dom_ready(driver, timeout=30)
 
         # 1) Intentar unirse a la reunión
@@ -238,12 +257,19 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
             time.sleep(2)
 
         logger.info(f"[{task_id}] 🏁 Bucle de grabación terminado.")
-
-
     except Exception as e:
         logger.error(f"[{task_id}] Error crítico: {e}", exc_info=True)
+        chromelog = os.path.join(task_dir, "chromedriver.log")
+        if os.path.exists(chromelog):
+            try:
+                with open(chromelog) as f:
+                    tail = "".join(f.readlines()[-80:])
+                logger.error(f"[{task_id}] Últimas líneas de chromedriver.log:\n{tail}")
+            except Exception:
+                logger.warning(f"[{task_id}] No se pudo leer chromedriver.log")
         if driver:
             take_screenshot(driver, task_id, "critical_error")
+
 
     finally:
         logger.info(f"[{task_id}] 🏁 Finalizando grabación...")

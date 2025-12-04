@@ -1,6 +1,6 @@
 services:
   meeting-bot:
-    build: ./meet-asbot/.
+    build: ./core/.
     environment:
       - GCS_BUCKET=anemophotoser
       - GCS_PREFIX=

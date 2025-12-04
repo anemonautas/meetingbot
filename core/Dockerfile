@@ -7,7 +7,6 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Sistema + Chrome + herramientas para uv en un solo RUN
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl wget gnupg unzip \
@@ -25,9 +24,9 @@ RUN apt-get update && \
     && apt-get update && apt-get install -y --no-install-recommends \
         google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
-# After installing google-chrome-stable
+
+# chromedriver que coincide con Chrome
 RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') && \
-    MAJOR_VERSION=${CHROME_VERSION%%.*} && \
     wget -O /tmp/chromedriver.zip \
       "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin && \
@@ -38,28 +37,30 @@ RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') && \
 ENV XDG_RUNTIME_DIR=/tmp/runtime-dir
 RUN mkdir -p /tmp/runtime-dir && chmod 700 /tmp/runtime-dir
 
-# Instalar uv y limpiar residuos de instalación
+# uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     rm -rf /root/.cache
-
 ENV PATH="/root/.local/bin:${PATH}"
 
-# Configuración de PulseAudio
+# PulseAudio
 RUN sed -i 's/^; enable-shm = yes/enable-shm = no/g' /etc/pulse/daemon.conf && \
     sed -i 's/^; exit-idle-time = 20/exit-idle-time = -1/g' /etc/pulse/daemon.conf && \
     adduser root pulse-access
 
-# Dependencias Python
 COPY pyproject.toml uv.lock* ./
-RUN uv sync --frozen || uv sync --system && \
-    # limpiar cachés de uv para reducir tamaño
-    rm -rf /root/.cache/uv
+RUN uv sync --frozen || uv sync --system && rm -rf /root/.cache/uv
 
-# Código
 COPY . .
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8080
+RUN google-chrome --version
+RUN chromedriver --version
+RUN ls -l /usr/local/bin/chromedriver
 
+RUN rm -f /etc/machine-id && \
+    dbus-uuidgen --ensure=/etc/machine-id && \
+    cat /etc/machine-id
+    
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "job_main.py"]
