@@ -55,7 +55,7 @@ class UploadRecordingsToGCSTest(unittest.TestCase):
             mock_bucket.blob.assert_called_once_with("folder/task-123/recording.mp4")
             mock_blob.upload_from_filename.assert_called_once_with(video_path)
             self.assertTrue(
-                any("Uploaded video" in message for message in log_cm.output),
+                any("Uploaded file" in message for message in log_cm.output),
                 msg="Expected upload confirmation log entry",
             )
 
