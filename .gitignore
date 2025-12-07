@@ -1,9 +1,4 @@
-.keys
-recordings
-
-**__pycache__
-**.venv
-**/.env
-.env
-
-la
+node_modules
+.next
+.DS_Store
+coverage
