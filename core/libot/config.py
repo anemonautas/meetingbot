@@ -8,6 +8,7 @@ EXIT_ON_FINISH = os.environ.get("EXIT_ON_FINISH", "1") == "1"
 GCS_BUCKET = os.environ.get("GCS_BUCKET")
 GCS_PREFIX = os.environ.get("GCS_PREFIX", "").rstrip("/")
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/output")
+SEGMENT_SECONDS = os.environ.get("SEGMENT_SECONDS", "300")
 
 # Virtual Display ID
 DISPLAY_NUM = ":99"

@@ -5,15 +5,13 @@ import time
 import uuid
 from libot.logger import logger
 from libot.recorder import record_task
-
+from libot.config import SEGMENT_SECONDS
 
 def env_bool(name: str, default: bool) -> bool:
     val = os.environ.get(name)
     if val is None:
         return default
     return val.lower() in ("1", "true", "yes", "y")
-
-SEGMENT_SECONDS = int(os.environ.get("SEGMENT_SECONDS", "60"))
 
 if __name__ == "__main__":
     meeting_url = os.environ.get("MEETING_URL")
