@@ -1,24 +1,48 @@
 import os
+import json
 from google import genai
+from google.genai import types
 from libot.logger import logger
 from libot.config import OUTPUT_DIR
 from libot.gcs import upload_transcriptions_to_gcs
 
 MODEL_ID = "gemini-flash-latest"
 
+generate_content_config = types.GenerateContentConfig(
+    response_mime_type="application/json",
+    response_schema=genai.types.Schema(
+        type = genai.types.Type.OBJECT,
+        required = ["conversation"],
+        properties = {
+            "conversation": genai.types.Schema(
+                    type = genai.types.Type.ARRAY,
+                    items = genai.types.Schema(
+                        type = genai.types.Type.OBJECT,
+                        required = ["speaker", "text"],
+                        properties = {
+                            "speaker": genai.types.Schema(
+                                type = genai.types.Type.STRING,
+                            ),
+                            "text": genai.types.Schema(
+                                type = genai.types.Type.STRING,
+                            ),
+                        },
+                    ),
+                ),
+        },
+    )
+)
+
+
 def persist_transcription(task_id, transcription, idx):
-    logger.info(f"{transcription}")
     task_dir = os.path.join(OUTPUT_DIR, task_id, 'transcriptions')
     os.makedirs(task_dir, exist_ok=True)
 
-    transcription_file = os.path.join(task_dir, f"{task_id}_{idx}.txt")
+    transcription_file = os.path.join(task_dir, f"{task_id}_{idx}.json")
     with open(transcription_file, "w") as f:
-        f.write(transcription)
+        f.write(json.dumps(transcription))
         logger.info(f"✅ Transcription saved to {transcription_file}")
-
-
     upload_transcriptions_to_gcs(task_id, transcription_file)
-
 
 def gemini_transcription(file_name, task_id, idx):
     """
@@ -40,6 +64,10 @@ def gemini_transcription(file_name, task_id, idx):
             sample_file,
             "Extract a complete transcript labeling the different speakers.",
         ],
+        config=generate_content_config,
     )
-    persist_transcription(task_id, response.text, idx)
+
+    response_json = response.text
+    persist_transcription(task_id, response_json, idx)
+
     return response.text

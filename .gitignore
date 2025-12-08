@@ -2,8 +2,7 @@
 recordings
 
 **__pycache__
-**.venv
-**/.env
-.env
+**.keys
 
-la
+**.venv
+**.env

@@ -1,0 +1,246 @@
+.
+├── core
+│   ├── assets
+│   │   ├── avatar.mjpeg
+│   │   └── avatar.png
+│   ├── conftest.py
+│   ├── deploy.sh
+│   ├── Dockerfile
+│   ├── entrypoint.sh
+│   ├── __init__.py
+│   ├── job_main.py
+│   ├── libot
+│   │   ├── audio.py
+│   │   ├── avatar.py
+│   │   ├── browser.py
+│   │   ├── compress.py
+│   │   ├── config.py
+│   │   ├── gcs.py
+│   │   ├── gemini.py
+│   │   ├── __init__.py
+│   │   ├── js_scripts.py
+│   │   ├── logger.py
+│   │   ├── meeting.py
+│   │   ├── __pycache__
+│   │   ├── recorder.py
+│   │   └── routes.py
+│   ├── openapi.yaml
+│   ├── output
+│   │   └── service.log
+│   ├── __pycache__
+│   │   ├── conftest.cpython-313-pytest-9.0.2.pyc
+│   │   ├── __init__.cpython-313.pyc
+│   │   ├── main.cpython-313.pyc
+│   │   └── routes.cpython-313.pyc
+│   ├── pyproject.toml
+│   ├── README.md
+│   ├── rest_api.py
+│   ├── tests
+│   │   ├── fixture
+│   │   ├── __pycache__
+│   │   ├── test_chrome_min.py
+│   │   ├── test_config_and_logger.py
+│   │   └── test_gcs.py
+│   └── uv.lock
+├── docker-compose.yml
+├── functions
+│   ├── main.py
+│   ├── __pycache__
+│   │   └── main.cpython-313.pyc
+│   ├── readme.md
+│   ├── requirements.txt
+│   └── test_local.py
+├── _Jenkinsfile
+├── readme.md
+├── recordings
+│   ├── 1765202139_46cc0533
+│   │   ├── 1765202141_loop.png
+│   │   ├── 1765202141_no_audio.png
+│   │   ├── 1765202141_pre_join.png
+│   │   ├── 1765202142_dismiss.png
+│   │   ├── 1765202146_dismiss.png
+│   │   ├── 1765202146_loop.png
+│   │   ├── 1765202146_name_filled.png
+│   │   ├── 1765202146_no_audio.png
+│   │   ├── 1765202147_audio_selected.png
+│   │   ├── 1765202147_clicked_join.png
+│   │   ├── 1765202153_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── audio_001.mp3
+│   │   ├── audio_001.wav
+│   │   ├── audio_002.mp3
+│   │   ├── audio_002.wav
+│   │   ├── click_Computer audio_2025-12-08_13-55-46.png
+│   │   ├── click_Join now_2025-12-08_13-55-47.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   ├── OPENING.png
+│   │   └── transcriptions
+│   ├── 1765202699_bf41fc9b
+│   │   ├── 1765202702_loop.png
+│   │   ├── 1765202702_no_audio.png
+│   │   ├── 1765202702_pre_join.png
+│   │   ├── 1765202703_dismiss.png
+│   │   ├── 1765202705_dismiss.png
+│   │   ├── 1765202705_loop.png
+│   │   ├── 1765202705_no_audio.png
+│   │   ├── 1765202708_dismiss.png
+│   │   ├── 1765202708_loop.png
+│   │   ├── 1765202708_name_filled.png
+│   │   ├── 1765202708_no_audio.png
+│   │   ├── 1765202709_audio_selected.png
+│   │   ├── 1765202709_clicked_join.png
+│   │   ├── 1765202715_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_14-05-08.png
+│   │   ├── click_Dismiss_2025-12-08_14-05-18.png
+│   │   ├── click_Join now_2025-12-08_14-05-09.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   ├── OPENING.png
+│   │   └── transcriptions
+│   ├── 1765212452_9e1bd6e7
+│   │   ├── 1765212454_loop.png
+│   │   ├── 1765212454_pre_join.png
+│   │   ├── 1765212455_dismiss.png
+│   │   ├── 1765212455_no_audio.png
+│   │   ├── 1765212459_loop.png
+│   │   ├── 1765212459_no_audio.png
+│   │   ├── 1765212460_audio_selected.png
+│   │   ├── 1765212460_dismiss.png
+│   │   ├── 1765212460_name_filled.png
+│   │   ├── 1765212461_clicked_join.png
+│   │   ├── 1765212466_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_16-47-40.png
+│   │   ├── click_Join now_2025-12-08_16-47-41.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   └── OPENING.png
+│   ├── 1765212592_82146faa
+│   │   ├── 1765212594_loop.png
+│   │   ├── 1765212594_pre_join.png
+│   │   ├── 1765212595_dismiss.png
+│   │   ├── 1765212595_no_audio.png
+│   │   ├── 1765212597_dismiss.png
+│   │   ├── 1765212597_loop.png
+│   │   ├── 1765212597_no_audio.png
+│   │   ├── 1765212600_dismiss.png
+│   │   ├── 1765212600_loop.png
+│   │   ├── 1765212600_name_filled.png
+│   │   ├── 1765212600_no_audio.png
+│   │   ├── 1765212601_audio_selected.png
+│   │   ├── 1765212601_clicked_join.png
+│   │   ├── 1765212607_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_16-50-00.png
+│   │   ├── click_Join now_2025-12-08_16-50-01.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   ├── OPENING.png
+│   │   └── transcriptions
+│   ├── 1765213120_8a8f37ef
+│   │   ├── 1765213124_loop.png
+│   │   ├── 1765213124_pre_join.png
+│   │   ├── 1765213125_dismiss.png
+│   │   ├── 1765213125_no_audio.png
+│   │   ├── 1765213129_loop.png
+│   │   ├── 1765213130_dismiss.png
+│   │   ├── 1765213130_name_filled.png
+│   │   ├── 1765213130_no_audio.png
+│   │   ├── 1765213131_audio_selected.png
+│   │   ├── 1765213133_clicked_join.png
+│   │   ├── 1765213148_joined_success.png
+│   │   ├── click_Computer audio_2025-12-08_16-58-50.png
+│   │   ├── click_Join now_2025-12-08_16-58-52.png
+│   │   └── OPENING.png
+│   ├── 1765213455_683be1b8
+│   │   ├── 1765213459_loop.png
+│   │   ├── 1765213459_pre_join.png
+│   │   ├── 1765213460_dismiss.png
+│   │   ├── 1765213460_no_audio.png
+│   │   ├── 1765213465_loop.png
+│   │   ├── 1765213466_dismiss.png
+│   │   ├── 1765213466_name_filled.png
+│   │   ├── 1765213466_no_audio.png
+│   │   ├── 1765213467_audio_selected.png
+│   │   ├── 1765213467_clicked_join.png
+│   │   ├── 1765213473_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_17-04-26.png
+│   │   ├── click_Join now_2025-12-08_17-04-27.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   └── OPENING.png
+│   ├── 1765213576_29571719
+│   │   ├── 1765213579_dismiss.png
+│   │   ├── 1765213579_loop.png
+│   │   ├── 1765213579_no_audio.png
+│   │   ├── 1765213579_pre_join.png
+│   │   ├── 1765213584_dismiss.png
+│   │   ├── 1765213584_loop.png
+│   │   ├── 1765213584_name_filled.png
+│   │   ├── 1765213584_no_audio.png
+│   │   ├── 1765213585_audio_selected.png
+│   │   ├── 1765213585_clicked_join.png
+│   │   ├── 1765213590_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_17-06-24.png
+│   │   ├── click_Join now_2025-12-08_17-06-25.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   └── OPENING.png
+│   ├── 1765213884_412d877d
+│   │   ├── 1765213886_loop.png
+│   │   ├── 1765213886_pre_join.png
+│   │   ├── 1765213887_dismiss.png
+│   │   ├── 1765213887_no_audio.png
+│   │   ├── 1765213892_loop.png
+│   │   ├── 1765213893_audio_selected.png
+│   │   ├── 1765213893_dismiss.png
+│   │   ├── 1765213893_name_filled.png
+│   │   ├── 1765213893_no_audio.png
+│   │   ├── 1765213894_clicked_join.png
+│   │   ├── 1765213899_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_17-11-33.png
+│   │   ├── click_Join now_2025-12-08_17-11-34.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   ├── OPENING.png
+│   │   └── transcriptions
+│   ├── 1765214572_583a845b
+│   │   ├── 1765214574_pre_join.png
+│   │   ├── 1765214575_dismiss.png
+│   │   ├── 1765214575_loop.png
+│   │   ├── 1765214575_no_audio.png
+│   │   ├── 1765214578_dismiss.png
+│   │   ├── 1765214578_loop.png
+│   │   ├── 1765214578_no_audio.png
+│   │   ├── 1765214580_dismiss.png
+│   │   ├── 1765214580_loop.png
+│   │   ├── 1765214580_name_filled.png
+│   │   ├── 1765214580_no_audio.png
+│   │   ├── 1765214581_audio_selected.png
+│   │   ├── 1765214581_clicked_join.png
+│   │   ├── 1765214587_joined_success.png
+│   │   ├── audio_000.mp3
+│   │   ├── audio_000.wav
+│   │   ├── click_Computer audio_2025-12-08_17-23-00.png
+│   │   ├── click_Join now_2025-12-08_17-23-01.png
+│   │   ├── controls_lost.png
+│   │   ├── ffmpeg_audio.log
+│   │   ├── OPENING.png
+│   │   └── transcriptions
+│   └── service.log
+├── run.sh
+└── tree.txt
+
+26 directories, 217 files

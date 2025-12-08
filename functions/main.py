@@ -1,96 +1,83 @@
-import os
-import time
 import functions_framework
-from google.cloud import storage
-from google import genai
-import tempfile
 
-MODEL_ID = "gemini-flash-lite-latest"
+import os
+import logging
+import uuid
+from google.cloud import run_v2
 
-def gemini_transcription(file_name):
-    """
-    Transcribes an audio file using Gemini.
-    """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("GEMINI_API_KEY not set. Skipping Gemini upload.")
-        return
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    client = genai.Client(api_key=api_key)
-    sample_file = client.files.upload(
-            file=file_name, 
-        )
-    
-    response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=[
-                sample_file, 
-                "Listen to this audio file and provide a concise transcription of what was said."
-            ]
-        )
-    print("-" * 20)
-    print(f"BRIEF FOR {file_name}:")
-    print(response.text)
-    print("-" * 20)
-    
-    return response.text
+client = run_v2.JobsClient()
+
+PROJECT_ID = os.environ.get('GCP_PROJECT', 'anemonautas-1f3cf') # or set manually
+REGION = os.environ.get('REGION', 'europe-west1')
+JOB_NAME = os.environ.get('JOB_NAME', 'meeting-recorder-job')
 
 
-
-@functions_framework.cloud_event
-def expose_to_gemini(cloud_event):
-    """
-    Triggered by a change to a Cloud Storage bucket.
-    Downloads the .wav, uploads to Gemini, and generates a brief.
-    """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("GOOGLE_API_KEY not set. Skipping Gemini upload.")
-        return
-
-    client = genai.Client(api_key=api_key)
-
-    data = cloud_event.data
-    bucket_name = data["bucket"]
-    file_name = data["name"]
-    
-    if not file_name.lower().endswith(".wav"):
-        print(f"Skipping non-wav file: {file_name}")
-        return
-
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(file_name)
-
-    _, temp_local_filename = tempfile.mkstemp(suffix=".wav")
-    
+@functions_framework.http
+def trigger_meeting_recorder(request):
     try:
-        print(f"Downloading {file_name}...")
-        blob.download_to_filename(temp_local_filename)
+        request_json = request.get_json(silent=True)
+        if not request_json:
+            raise ValueError("Empty or invalid JSON body")
+    except ValueError as e:
+        logger.error(f"Bad Request: {e}")
+        return ({'error': 'Invalid JSON provided'}, 400)
 
-        print("Uploading to Gemini File API...")
-        sample_file = client.files.upload(
-            file=temp_local_filename, 
-        )
+    meeting_url = request_json.get('meeting_url')
+    if not meeting_url:
+        logger.warning("Attempted to trigger job without meeting_url")
+        return ({'error': 'meeting_url is required'}, 400)
+
+    # 3. Prepare Job Configuration
+    # Generate a unique ID for this specific run
+    task_id = f"rec-{str(uuid.uuid4())}"
+    
+    # Prepare environment variables for the job container
+    # Note: We convert all values to strings as EnvVars must be strings
+    env_vars = {
+        "meeting_url": meeting_url,
+        "duration": str(request_json.get('duration', 1800)),
+        "record_audio": str(request_json.get('record_audio', True)).lower(),
+        "record_video": str(request_json.get('record_video', False)).lower(),
+        "task_id": task_id
+    }
+
+    logger.info(f"Preparing to trigger job {JOB_NAME} for task {task_id}")
+
+    job_path = client.job_path(PROJECT_ID, REGION, JOB_NAME)
+
+    env_var_objects = [
+        run_v2.EnvVar(name=k, value=v) for k, v in env_vars.items()
+    ]
+
+    overrides = run_v2.RunJobRequest.Overrides(
+        container_overrides=[
+            run_v2.RunJobRequest.Overrides.ContainerOverride(
+                env=env_var_objects
+            )
+        ]
+    )
+
+    request_obj = run_v2.RunJobRequest(
+        name=job_path,
+        overrides=overrides
+    )
+
+    try:
+        operation = client.run_job(request=request_obj)
+        execution_name = operation.metadata.name
         
-        print(f"File uploaded. URI: {sample_file.uri}")
-
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=[
-                sample_file, 
-                "Listen to this audio file and provide a concise transcription of what was said."
-            ]
-        )
-
-        print("-" * 20)
-        print(f"BRIEF FOR {file_name}:")
-        print(response.text)
-        print("-" * 20)
+        logger.info(f"Job triggered successfully. Execution: {execution_name}")
+        
+        return ({
+            'message': 'Job started successfully',
+            'executionName': execution_name,
+            'taskId': task_id
+        }, 200)
 
     except Exception as e:
-        print(f"Error processing file: {e}")
-        raise e
-    finally:
-        if os.path.exists(temp_local_filename):
-            os.remove(temp_local_filename)
+        logger.exception("Failed to trigger Cloud Run Job")
+        return ({'error': str(e)}, 500)
+

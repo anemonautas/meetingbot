@@ -81,22 +81,22 @@ def process_audio_segment(task_id, wav_path, task_dir, segment_index):
         mp3_path = os.path.join(task_dir, base_name + ".mp3")
         remote_name = f"{base_name}.mp3"
 
-        logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Compressing {wav_path}...")
+        logger.info(f"  [{task_id}] 🎙️ [Seg {segment_index}] Compressing {wav_path}...")
         compress_audio(wav_path, mp3_path)
 
         if os.path.exists(mp3_path):
-            logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Uploading {remote_name}...")
+            logger.info(f"  [{task_id}] 🎙️ [Seg {segment_index}] Uploading {remote_name}...")
             upload_recordings_to_gcs(task_id, mp3_path, remote_name)
 
-            logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Transcribing with Gemini...")
+            logger.info(f"  [{task_id}] 🎙️ [Seg {segment_index}] Transcribing with Gemini...")
             transcript = gemini_transcription(mp3_path, task_id, segment_index)
-            logger.warning(f"[{task_id}] 🎙️ [Seg {segment_index}] Result: {transcript}")
+            logger.warning(f"   [{task_id}] 🎙️ [Seg {segment_index}] Transcript result: {len(transcript)}")
 
         else:
-            logger.error(f"[{task_id}] ❌ Failed to compress segment {segment_index}")
+            logger.error(f" [{task_id}] ❌ Failed to compress segment {segment_index}")
 
     except Exception as e:
-        logger.error(f"[{task_id}] ❌ Error processing segment {segment_index}: {e}")
+        logger.error(f" [{task_id}] ❌ Error processing segment {segment_index}: {e}")
 
 
 def record_task(
@@ -107,12 +107,11 @@ def record_task(
     record_video=True,
     segment_seconds: int = 300,
 ):
-    logger.info(f"[{task_id}] Iniciando proceso de grabación... de {meeting_url}")
+    logger.info(f"[{task_id}] Starting recording process for \n{meeting_url}")
     task_dir = os.path.join(OUTPUT_DIR, task_id)
     os.makedirs(task_dir, exist_ok=True)
     
     output_video = os.path.join(task_dir, "recording.mp4")
-    # Pattern for ffmpeg segment output
     audio_pattern = os.path.join(task_dir, "audio_%03d.wav") 
     
     ffmpeg_video_log = os.path.join(task_dir, "ffmpeg_video.log")
@@ -126,7 +125,6 @@ def record_task(
     stop_audio_enforcer = threading.Event()
     driver = None
 
-    # Tracking for real-time processing
     next_audio_index_to_process = 0
     processing_threads = []
 
@@ -139,25 +137,21 @@ def record_task(
         take_screenshot(driver, task_id, "OPENING")
         _wait_dom_ready(driver, timeout=30)
 
-        # 1) Join meeting
         if not join_meeting(driver, task_id):
             logger.error(f"[{task_id}] Abortando: no se pudo unir a la reunión.")
             driver.quit()
             return
 
-        # 2) Clear tooltips
         time.sleep(2)
         for _ in range(3):
             if not safe_click(driver, "button", ["Dismiss", "Got it", "Close", "Cerrar"], task_id):
                 break
             time.sleep(1)
 
-        # 3) Audio routing enforcer
         t_ae = threading.Thread(target=force_audio_routing, args=(task_id, stop_audio_enforcer))
         t_ae.daemon = True
         t_ae.start()
 
-        # 4) Launch ffmpeg AUDIO
         ffmpeg_env = os.environ.copy()
         if record_audio:
             cmd_audio = [
@@ -176,7 +170,6 @@ def record_task(
             if ffmpeg_audio_process.poll() is not None:
                 raise RuntimeError("ffmpeg audio failed startup")
 
-        # 5) Launch ffmpeg VIDEO
         if record_video:
             cmd_video = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -192,38 +185,29 @@ def record_task(
         controls_missing_count = 0
         exit_phrases = ["you were removed", "se le ha eliminado", "meeting ended", "finalizó la reunión", "thank you for attending"]
 
-        # --- MAIN LOOP ---
-        while (time.time() - start_time) < max_duration:
-            
-            # --- REAL TIME AUDIO PROCESSING CHECK ---
+        while (time.time() - start_time) < max_duration:            
             if record_audio:
-                # We check if the NEXT file exists. If audio_001.wav exists, audio_000.wav is closed and ready.
                 next_file_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process + 1:03d}.wav")
                 
                 if os.path.exists(next_file_path):
-                    # The current index is ready to be processed
                     ready_file_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process:03d}.wav")
-                    
+
                     logger.info(f"[{task_id}] ⚡ Segmento completado detectado: {ready_file_path}")
                     
-                    # Process in a separate thread to not block the checking loop
                     t = threading.Thread(
                         target=process_audio_segment, 
                         args=(task_id, ready_file_path, task_dir, next_audio_index_to_process)
                     )
                     t.start()
                     processing_threads.append(t)
-                    
                     next_audio_index_to_process += 1
-            # ----------------------------------------
 
-            # Check processes health
             primary_proc = ffmpeg_audio_process if record_audio else ffmpeg_video_process
+
             if primary_proc and primary_proc.poll() is not None:
                 logger.error(f"[{task_id}] ❌ Proceso ffmpeg principal terminó inesperadamente.")
                 break
 
-            # Check DOM for exit phrases
             try:
                 found_phrase = driver.execute_script(CHECK_TEXT_PRESENCE_JS, exit_phrases)
             except Exception:
@@ -233,7 +217,6 @@ def record_task(
                 logger.info(f"[{task_id}] 🛑 Detectado texto de salida: '{found_phrase}'")
                 break
 
-            # Check Controls
             controls_visible = False
             check_terms = ["Raise", "Levantar", "Chat", "Leave", "Salir"]
             for text in check_terms:
@@ -274,7 +257,6 @@ def record_task(
         logger.info(f"[{task_id}] 🏁 Finalizando grabación y limpiando...")
         stop_audio_enforcer.set()
 
-        # Stop FFMPEG
         for proc in [ffmpeg_audio_process, ffmpeg_video_process]:
             if proc and proc.poll() is None:
                 try:
@@ -291,36 +273,24 @@ def record_task(
 
         shutil.rmtree(f"/tmp/profile_{task_id}", ignore_errors=True)
 
-        # --- PROCESS REMAINING AUDIO ---
-        # There is likely one last segment (the one active when loop ended) that wasn't processed yet.
-        # It's the file at `next_audio_index_to_process`.
-        
         if record_audio:
-            # Wait for any currently running upload threads to finish
             for t in processing_threads:
                 if t.is_alive():
                     t.join(timeout=30)
 
-            # Check for any remaining WAV files that haven't been processed
-            final_segment_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process:03d}.wav")
-            
-            # Use glob to find any files we might have missed or the final truncated one
             all_wavs = sorted(glob.glob(os.path.join(task_dir, "audio_*.wav")))
             
             for wav_path in all_wavs:
-                # Extract index from filename 'audio_005.wav' -> 5
                 try:
                     idx_str = os.path.splitext(os.path.basename(wav_path))[0].split('_')[1]
                     idx = int(idx_str)
                     
                     if idx >= next_audio_index_to_process:
                         logger.info(f"[{task_id}] 🏁 Procesando segmento final/restante: {wav_path}")
-                        # Process synchronously in finally block
                         process_audio_segment(task_id, wav_path, task_dir, idx)
                 except Exception as e:
                     logger.warning(f"[{task_id}] Error parsing filename {wav_path}: {e}")
 
-        # Upload Video
         if record_video and os.path.exists(output_video):
             upload_recordings_to_gcs(task_id, output_video, "video.mp4")
             logger.info(f"[{task_id}] 🎬 Video subido a GCS.")

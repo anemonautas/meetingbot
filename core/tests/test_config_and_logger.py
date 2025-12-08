@@ -105,13 +105,13 @@ class CompressModuleTest(unittest.TestCase):
         with mock.patch.dict(sys.modules, {"pydub": pydub_stub}):
             from libot import compress
 
-            compress.compress_audio("input.wav", "output.mp3", bitrate="64k")
+            compress.compress_audio("tests/fixture/input.wav", "tests/fixture/output.mp3", bitrate="64k")
 
-        audio_segment_mock.from_file.assert_called_once_with("input.wav")
+        audio_segment_mock.from_file.assert_called_once_with("tests/fixture/input.wav")
         mock_segment.set_channels.assert_called_once_with(1)
         mock_after_channels.set_frame_rate.assert_called_once_with(16000)
         mock_after_frame_rate.export.assert_called_once_with(
-            "output.mp3", format="mp3", bitrate="64k"
+            "tests/fixture/output.mp3", format="mp3", bitrate="64k"
         )
 
 

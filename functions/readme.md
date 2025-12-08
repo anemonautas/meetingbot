@@ -1,59 +1,42 @@
 # Cloud functions of the project
 
-- Need a passeplat for a given file be exposed to gemini.
-- This function will be triggered by a creation of a file in a given bucket.
+## Trigger a job
 
-## Deployment
+As long as Cloud Run Jobs has not a RestAPI, we need to use a Cloud Function to trigger it.
 
-To deploy this function to Google Cloud, run the following command (replace `YOUR_TRIGGER_BUCKET` with your actual bucket name):
+The following are the instructions to doit:
+
+### Prerequisites
+
+Run the function locally. As long as they are cloud functions, we may use vanilla `pip` to install the dependencies.
 
 ```bash
-gcloud functions deploy expose-to-gemini \
-    --gen2 \
-    --runtime=python311 \
-    --region=us-central1 \
-    --source=./functions \
-    --entry-point=expose_to_gemini \
-    --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
-    --trigger-event-filters="bucket=anemophotoser" \
-    --set-env-vars=GEMINI_API_KEY=$your_gemini_api_key
+pip install -r requirements.txt
 ```
 
-> **Note:** Ensure `GEMINI_API_KEY` is set in the environment variables.
+Run the function:
 
-## Local Emulation
+```bash
+python -m functions_framework --target=trigger_meeting_recorder --port=8000
+```
 
-You can run the function locally using `functions-framework`.
+### Set the environment variables
 
-1. **Install dependencies:**
+```bash
+export FUNCTION_URL='http://127.0.0.1:8000'
 
-   ```bash
-   pip install -r functions/requirements.txt
-   ```
+# You may replace this for any recent Teams meeting URL.
+export MEETING_URL='https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZDJhMzY1YTQtMDQwZS00MjZhLWFkMjMtYWM0ZmFlZjBhMDMy%40thread.v2/0?context=%7b%22Tid%22%3a%2234ff9106-4c49-4535-98fa-c6566a9218f8%22%2c%22Oid%22%3a%22619a0a3b-ad73-47cd-b36b-07e588d11db1%22%7d'
+```
 
-2. **Run the function:**
+2. Trigger the function
 
-   ```bash
-   # Set your API key first
-   export GEMINI_API_KEY=your_api_key
-   
-   functions-framework --target=expose_to_gemini --debug
-   ```
+```bash
+curl -X POST "${FUNCTION_URL}" \
+     -H "Content-Type: application/json" \
+     -d "{
+       \"meeting_url\": \"${MEETING_URL}\",
+       \"duration\": ${DURATION}
+     }"
 
-3. **Trigger with cURL:**
-   Since this is a CloudEvent function, you need to send a properly formatted POST request.
-
-   ```bash
-   curl -X POST localhost:8000 \
-      -H "Content-Type: application/json" \
-      -H "ce-id: 1234567890" \
-      -H "ce-specversion: 1.0" \
-      -H "ce-type: google.cloud.storage.object.v1.finalized" \
-      -H "ce-source: //storage.googleapis.com/projects/_/buckets/anemophotoser" \
-      -d '{
-            "bucket": "anemophotoser",
-            "name": "18451c14/audio.wav"
-          }'
-   ```
-
-*Note: The function now expects `.wav` files and will try to download them from the specified bucket, so ensure the file actually exists in your GCS bucket and you have credentials to access it locally (e.g. via `gcloud auth application-default login`).*
+```
