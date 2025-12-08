@@ -1,3 +1,8 @@
+# test_chrome_min.py
+import pytest
+
+pytest.importorskip("selenium")
+
 from libot.recorder import record_task
 
 
