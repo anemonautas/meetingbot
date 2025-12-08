@@ -4,6 +4,7 @@ import threading
 import subprocess
 import signal
 import shutil
+import glob
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -20,6 +21,7 @@ from libot.meeting import join_meeting
 from libot.gcs import upload_recordings_to_gcs
 from libot.gemini import gemini_transcription
 from libot.compress import compress_audio
+
 
 def _wait_dom_ready(driver, timeout=30):
     end = time.time() + timeout
@@ -38,7 +40,6 @@ def build_driver(task_id: str, avatar_y4m: str | None, task_dir: str):
     opts = Options()
     opts.binary_location = "/usr/bin/google-chrome"
 
-    # Flags mínimas para contenedor
     opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
@@ -59,7 +60,6 @@ def build_driver(task_id: str, avatar_y4m: str | None, task_dir: str):
 
     opts.add_argument(f"--user-data-dir=/tmp/profile_{task_id}")
 
-    # logging extra
     opts.add_argument("--enable-logging=stderr")
     opts.add_argument("--v=1")
 
@@ -71,151 +71,159 @@ def build_driver(task_id: str, avatar_y4m: str | None, task_dir: str):
     return webdriver.Chrome(service=service, options=opts)
 
 
+def process_audio_segment(task_id, wav_path, task_dir, segment_index):
+    """
+    Helper function to Compress -> Upload -> Transcribe a single completed segment.
+    Designed to run in a thread.
+    """
+    try:
+        base_name = os.path.splitext(os.path.basename(wav_path))[0]  # e.g., audio_000
+        mp3_path = os.path.join(task_dir, base_name + ".mp3")
+        remote_name = f"{base_name}.mp3"
 
-def record_task(meeting_url, max_duration, task_id, record_audio=True, record_video=True):
-    logger.info(f"[{task_id}] Iniciando proceso de grabación...")
+        logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Compressing {wav_path}...")
+        compress_audio(wav_path, mp3_path)
+
+        if os.path.exists(mp3_path):
+            logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Uploading {remote_name}...")
+            upload_recordings_to_gcs(task_id, mp3_path, remote_name)
+
+            logger.info(f"[{task_id}] 🎙️ [Seg {segment_index}] Transcribing with Gemini...")
+            transcript = gemini_transcription(mp3_path, task_id, segment_index)
+            logger.warning(f"[{task_id}] 🎙️ [Seg {segment_index}] Result: {transcript}")
+
+        else:
+            logger.error(f"[{task_id}] ❌ Failed to compress segment {segment_index}")
+
+    except Exception as e:
+        logger.error(f"[{task_id}] ❌ Error processing segment {segment_index}: {e}")
+
+
+def record_task(
+    meeting_url,
+    max_duration,
+    task_id,
+    record_audio=True,
+    record_video=True,
+    segment_seconds: int = 300,
+):
+    logger.info(f"[{task_id}] Iniciando proceso de grabación... de {meeting_url}")
     task_dir = os.path.join(OUTPUT_DIR, task_id)
     os.makedirs(task_dir, exist_ok=True)
-    logger.debug(f"[{task_id}] Directorio de grabación: {task_dir}")
-
+    
     output_video = os.path.join(task_dir, "recording.mp4")
-    logger.debug(f"[{task_id}] Archivo de video: {output_video}")
-
-    output_audio = os.path.join(task_dir, "audio.wav")       # siempre que record_audio sea True
-    compressed_audio = os.path.join(task_dir, "audio.mp3")
-    logger.debug(f"[{task_id}] Archivo de audio: {output_audio}")
-
+    # Pattern for ffmpeg segment output
+    audio_pattern = os.path.join(task_dir, "audio_%03d.wav") 
+    
     ffmpeg_video_log = os.path.join(task_dir, "ffmpeg_video.log")
-    logger.debug(f"[{task_id}] Archivo de log de video: {ffmpeg_video_log}")
-
     ffmpeg_audio_log = os.path.join(task_dir, "ffmpeg_audio.log")
-    logger.debug(f"[{task_id}] Archivo de log de audio: {ffmpeg_audio_log}")
 
     audio_source = get_monitor_source()
-    logger.debug(f"[{task_id}] Fuente de audio: {audio_source}")
-
     avatar_y4m = ensure_avatar_y4m()
-    
-    ffmpeg_video_process = None
-    ffmpeg_audio_process = None
-    stop_audio_enforcer = threading.Event()
 
     ffmpeg_video_process = None
     ffmpeg_audio_process = None
-
     stop_audio_enforcer = threading.Event()
     driver = None
 
+    # Tracking for real-time processing
+    next_audio_index_to_process = 0
+    processing_threads = []
+
     try:
         logger.info(f"[{task_id}] Lanzando Chrome...")
-
-        driver =  build_driver(task_id, avatar_y4m, task_dir)
-
-        logger.info(f"[{task_id}] Driver de Chrome creado: {driver}")
-
+        driver = build_driver(task_id, avatar_y4m, task_dir)
+        
         logger.info(f"[{task_id}] Abriendo URL de reunión: {meeting_url}")
         driver.get(meeting_url)
-
+        take_screenshot(driver, task_id, "OPENING")
         _wait_dom_ready(driver, timeout=30)
 
-        # 1) Intentar unirse a la reunión
+        # 1) Join meeting
         if not join_meeting(driver, task_id):
             logger.error(f"[{task_id}] Abortando: no se pudo unir a la reunión.")
             driver.quit()
-            stop_audio_enforcer.set()
-            if ffmpeg_audio_process:
-                ffmpeg_audio_process.terminate()
-            if ffmpeg_video_process:
-                ffmpeg_video_process.terminate()
             return
 
-        # 2) Limpiar tooltips genéricos dentro de la reunión
+        # 2) Clear tooltips
         time.sleep(2)
         for _ in range(3):
-            logger.debug(f"[{task_id}] Intentando limpiar tooltips...")
             if not safe_click(driver, "button", ["Dismiss", "Got it", "Close", "Cerrar"], task_id):
                 break
             time.sleep(1)
 
-        # 3) Hilo para forzar routing de audio
-        logger.debug(f"[{task_id}] Iniciando hilo para forzar routing de audio...")
+        # 3) Audio routing enforcer
         t_ae = threading.Thread(target=force_audio_routing, args=(task_id, stop_audio_enforcer))
         t_ae.daemon = True
         t_ae.start()
-        logger.debug(f"[{task_id}] Hilo para forzar routing de audio iniciado: {t_ae}")
-        
-        # 4) Lanzar ffmpeg
-        logger.info(f"[{task_id}] 🎥 Iniciando grabación (audio source: {audio_source})")
+
+        # 4) Launch ffmpeg AUDIO
         ffmpeg_env = os.environ.copy()
         if record_audio:
             cmd_audio = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-                "-f", "pulse", "-ac", "2", "-thread_queue_size", "1024", "-i", audio_source,
-                "-acodec", "pcm_s16le", "-ar", "48000",  # WAV 48kHz PCM
-                output_audio,
+                "-f", "pulse", "-ac", "2", "-thread_queue_size", "1024",
+                "-i", audio_source,
+                "-acodec", "pcm_s16le", "-ar", "48000",
+                "-f", "segment", "-segment_time", str(segment_seconds),
+                "-reset_timestamps", "1",
+                audio_pattern,
             ]
-            logger.debug(f"[{task_id}] Comando de ffmpeg para audio: {cmd_audio}")
-            logger.info(f"[{task_id}] 🎙️ Iniciando grabación de audio en WAV desde: {audio_source}")
             with open(ffmpeg_audio_log, "w") as f_log_a:
-                ffmpeg_audio_process = subprocess.Popen(
-                    cmd_audio,
-                    stdout=f_log_a,
-                    stderr=subprocess.STDOUT,
-                    env=ffmpeg_env,
-                )
-            logger.debug(f"[{task_id}] Proceso de ffmpeg para audio iniciado: {ffmpeg_audio_process}")
+                ffmpeg_audio_process = subprocess.Popen(cmd_audio, stdout=f_log_a, stderr=subprocess.STDOUT, env=ffmpeg_env)
+            
             time.sleep(1)
             if ffmpeg_audio_process.poll() is not None:
-                logger.error(f"[{task_id}] ❌ ffmpeg AUDIO no arrancó. Ver {ffmpeg_audio_log}")
                 raise RuntimeError("ffmpeg audio failed startup")
 
-        # 6) Lanzar ffmpeg de VÍDEO (sólo vídeo, sin audio)
+        # 5) Launch ffmpeg VIDEO
         if record_video:
             cmd_video = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
                 "-f", "x11grab", "-video_size", "1920x1080", "-framerate", "30",
-                "-thread_queue_size", "1024", "-i", DISPLAY_NUM,
-                "-an",  # sin audio
+                "-thread_queue_size", "1024", "-i", DISPLAY_NUM, "-an",
                 "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
                 output_video,
             ]
-            logger.info(f"[{task_id}] 🎥 Iniciando grabación de vídeo (opcional).")
             with open(ffmpeg_video_log, "w") as f_log_v:
-                ffmpeg_video_process = subprocess.Popen(
-                    cmd_video,
-                    stdout=f_log_v,
-                    stderr=subprocess.STDOUT,
-                    env=ffmpeg_env,
-                )
-            time.sleep(1)
-            if ffmpeg_video_process.poll() is not None:
-                logger.error(f"[{task_id}] ❌ ffmpeg VÍDEO no arrancó. Ver {ffmpeg_video_log}")
-                # si el vídeo es opcional, puedes no hacer raise aquí:
-                if record_video:
-                    raise RuntimeError("ffmpeg video failed startup")
+                ffmpeg_video_process = subprocess.Popen(cmd_video, stdout=f_log_v, stderr=subprocess.STDOUT, env=ffmpeg_env)
 
-        # 5) Bucle de monitorización de la reunión
         start_time = time.time()
         controls_missing_count = 0
-        exit_phrases = [
-            "you were removed", "se le ha eliminado",
-            "meeting ended", "finalizó la reunión",
-            "thank you for attending",
-        ]
+        exit_phrases = ["you were removed", "se le ha eliminado", "meeting ended", "finalizó la reunión", "thank you for attending"]
 
+        # --- MAIN LOOP ---
         while (time.time() - start_time) < max_duration:
-            # ffmpeg sigue vivo
-            primary_proc = ffmpeg_audio_process if record_audio else ffmpeg_video_process
+            
+            # --- REAL TIME AUDIO PROCESSING CHECK ---
+            if record_audio:
+                # We check if the NEXT file exists. If audio_001.wav exists, audio_000.wav is closed and ready.
+                next_file_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process + 1:03d}.wav")
+                
+                if os.path.exists(next_file_path):
+                    # The current index is ready to be processed
+                    ready_file_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process:03d}.wav")
+                    
+                    logger.info(f"[{task_id}] ⚡ Segmento completado detectado: {ready_file_path}")
+                    
+                    # Process in a separate thread to not block the checking loop
+                    t = threading.Thread(
+                        target=process_audio_segment, 
+                        args=(task_id, ready_file_path, task_dir, next_audio_index_to_process)
+                    )
+                    t.start()
+                    processing_threads.append(t)
+                    
+                    next_audio_index_to_process += 1
+            # ----------------------------------------
 
-            if primary_proc is not None and primary_proc.poll() is not None:
+            # Check processes health
+            primary_proc = ffmpeg_audio_process if record_audio else ffmpeg_video_process
+            if primary_proc and primary_proc.poll() is not None:
                 logger.error(f"[{task_id}] ❌ Proceso ffmpeg principal terminó inesperadamente.")
                 break
 
-            # (Opcional) log si el secundario muere
-            if record_video and ffmpeg_video_process is not None and ffmpeg_video_process.poll() is not None:
-                logger.warning(f"[{task_id}] ⚠️ Proceso de vídeo ha terminado, pero sigo grabando audio.")
-
-            # Texto de fin de reunión
+            # Check DOM for exit phrases
             try:
                 found_phrase = driver.execute_script(CHECK_TEXT_PRESENCE_JS, exit_phrases)
             except Exception:
@@ -225,10 +233,9 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
                 logger.info(f"[{task_id}] 🛑 Detectado texto de salida: '{found_phrase}'")
                 break
 
-            # Heurística de controles visibles
+            # Check Controls
             controls_visible = False
             check_terms = ["Raise", "Levantar", "Chat", "Leave", "Salir"]
-
             for text in check_terms:
                 try:
                     if driver.execute_script(FIND_AND_CLICK_JS, [text], "button", False) == "found":
@@ -236,7 +243,7 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
                         break
                 except Exception:
                     pass
-
+            
             if not controls_visible:
                 try:
                     if driver.find_elements(By.ID, "hangup-button"):
@@ -257,84 +264,66 @@ def record_task(meeting_url, max_duration, task_id, record_audio=True, record_vi
             time.sleep(2)
 
         logger.info(f"[{task_id}] 🏁 Bucle de grabación terminado.")
+
     except Exception as e:
         logger.error(f"[{task_id}] Error crítico: {e}", exc_info=True)
-        chromelog = os.path.join(task_dir, "chromedriver.log")
-        if os.path.exists(chromelog):
-            try:
-                with open(chromelog) as f:
-                    tail = "".join(f.readlines()[-80:])
-                logger.error(f"[{task_id}] Últimas líneas de chromedriver.log:\n{tail}")
-            except Exception:
-                logger.warning(f"[{task_id}] No se pudo leer chromedriver.log")
         if driver:
             take_screenshot(driver, task_id, "critical_error")
 
-
     finally:
-        logger.info(f"[{task_id}] 🏁 Finalizando grabación...")
+        logger.info(f"[{task_id}] 🏁 Finalizando grabación y limpiando...")
         stop_audio_enforcer.set()
-        logger.info(f"[{task_id}] 🏁 Audio enforcer detenido.")
 
-        logger.info(f"[{task_id}] 🏁 Deteniendo procesos ffmpeg...")
-        for proc_name, proc in [("AUDIO", ffmpeg_audio_process), ("VÍDEO", ffmpeg_video_process)]:
-            if proc is not None and proc.poll() is None:
-                logger.info(f"[{task_id}] Deteniendo ffmpeg {proc_name}...")
+        # Stop FFMPEG
+        for proc in [ffmpeg_audio_process, ffmpeg_video_process]:
+            if proc and proc.poll() is None:
                 try:
                     os.kill(proc.pid, signal.SIGTERM)
-                except Exception:
-                    pass
-                try:
                     proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
+                except Exception:
                     proc.kill()
-        logger.info(f"[{task_id}] 🏁 Procesos ffmpeg detenidos.")
-
+        
         if driver:
             try:
                 driver.quit()
             except Exception:
                 pass
-            logger.info(f"[{task_id}] 🏁 Driver detenido.")
 
-        profile_path = f"/tmp/profile_{task_id}"
-        if os.path.exists(profile_path):
-            try:
-                shutil.rmtree(profile_path)
-                logger.info(f"[{task_id}] 🏁 Profile eliminado.")
-            except Exception:
-                time.sleep(1)
-                shutil.rmtree(profile_path, ignore_errors=True)
-                logger.warning(f"[{task_id}] 🏁 No se pudo eliminar el profile limpiamente.")
+        shutil.rmtree(f"/tmp/profile_{task_id}", ignore_errors=True)
 
-        logger.info(f"[{task_id}] 🏁 Cleanup completado.")
-
-        # 7) Upload sólo si existe el fichero
-        if record_audio and os.path.exists(output_audio):
-
-            logger.info(f"[{task_id}] 🎙️ Comprimiendo audio..." )
-            compress_audio(output_audio, compressed_audio)
-            logger.info(f"[{task_id}] 🎙️ Audio comprimido en {compressed_audio}")
-
-            logger.info(f"[{task_id}] 🎙️ Subiendo audio a GCS...")
-            upload_recordings_to_gcs(task_id, compressed_audio, "audio.mp3")
-            logger.info(f"[{task_id}] 🎙️ Audio subido a GCS.")
-
-            logger.info(f"[{task_id}] 🎙️ Transcribiendo audio con Gemini...")
-            transcript = gemini_transcription(compressed_audio)
-            logger.info(f"[{task_id}] 🎙️ Transcripción terminada.")
-
-            logger.warning(f"[{task_id}] 🎙️ Transcripción: {transcript}")
-
-        else:
-            logger.warning(f"[{task_id}] No se encontró {output_audio}, no se sube nada.")
+        # --- PROCESS REMAINING AUDIO ---
+        # There is likely one last segment (the one active when loop ended) that wasn't processed yet.
+        # It's the file at `next_audio_index_to_process`.
         
+        if record_audio:
+            # Wait for any currently running upload threads to finish
+            for t in processing_threads:
+                if t.is_alive():
+                    t.join(timeout=30)
+
+            # Check for any remaining WAV files that haven't been processed
+            final_segment_path = os.path.join(task_dir, f"audio_{next_audio_index_to_process:03d}.wav")
+            
+            # Use glob to find any files we might have missed or the final truncated one
+            all_wavs = sorted(glob.glob(os.path.join(task_dir, "audio_*.wav")))
+            
+            for wav_path in all_wavs:
+                # Extract index from filename 'audio_005.wav' -> 5
+                try:
+                    idx_str = os.path.splitext(os.path.basename(wav_path))[0].split('_')[1]
+                    idx = int(idx_str)
+                    
+                    if idx >= next_audio_index_to_process:
+                        logger.info(f"[{task_id}] 🏁 Procesando segmento final/restante: {wav_path}")
+                        # Process synchronously in finally block
+                        process_audio_segment(task_id, wav_path, task_dir, idx)
+                except Exception as e:
+                    logger.warning(f"[{task_id}] Error parsing filename {wav_path}: {e}")
+
+        # Upload Video
         if record_video and os.path.exists(output_video):
             upload_recordings_to_gcs(task_id, output_video, "video.mp4")
             logger.info(f"[{task_id}] 🎬 Video subido a GCS.")
-        else:
-            logger.warning(f"[{task_id}] No se encontró {output_video}, no se sube nada.")
 
         if EXIT_ON_FINISH:
-            logger.info(f"[{task_id}] EXIT_ON_FINISH activo. Terminando proceso.")
             os._exit(0)

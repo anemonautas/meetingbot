@@ -1,9 +1,7 @@
-## Cloud functions of the project:
-
+# Cloud functions of the project
 
 - Need a passeplat for a given file be exposed to gemini.
 - This function will be triggered by a creation of a file in a given bucket.
-
 
 ## Deployment
 
@@ -28,11 +26,13 @@ gcloud functions deploy expose-to-gemini \
 You can run the function locally using `functions-framework`.
 
 1. **Install dependencies:**
+
    ```bash
    pip install -r functions/requirements.txt
    ```
 
 2. **Run the function:**
+
    ```bash
    # Set your API key first
    export GEMINI_API_KEY=your_api_key
@@ -55,4 +55,5 @@ You can run the function locally using `functions-framework`.
             "name": "18451c14/audio.wav"
           }'
    ```
-   *Note: The function now expects `.wav` files and will try to download them from the specified bucket, so ensure the file actually exists in your GCS bucket and you have credentials to access it locally (e.g. via `gcloud auth application-default login`).*
+
+*Note: The function now expects `.wav` files and will try to download them from the specified bucket, so ensure the file actually exists in your GCS bucket and you have credentials to access it locally (e.g. via `gcloud auth application-default login`).*

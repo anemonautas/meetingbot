@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
-  title: Tango Recorder API
+  title: Recorder API
   description: API for triggering the recording bot.
   version: 1.0.0
 servers:

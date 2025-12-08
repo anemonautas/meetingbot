@@ -22,8 +22,9 @@ from libot import gcs
 
 class UploadRecordingsToGCSTest(unittest.TestCase):
     def test_skips_upload_when_bucket_missing(self):
-        with mock.patch.object(gcs, "GCS_BUCKET", None), \
-             mock.patch("libot.gcs.storage.Client") as mock_client:
+        with mock.patch.object(gcs, "GCS_BUCKET", None), mock.patch(
+            "libot.gcs.storage.Client"
+        ) as mock_client:
             with self.assertLogs(gcs.logger, level="WARNING") as log_cm:
                 gcs.upload_recordings_to_gcs("task-123", "/tmp/nonexistent.mp4")
 
@@ -45,9 +46,9 @@ class UploadRecordingsToGCSTest(unittest.TestCase):
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
-            with mock.patch.object(gcs, "GCS_BUCKET", "my-bucket"), \
-                 mock.patch.object(gcs, "GCS_PREFIX", "folder"), \
-                 mock.patch("libot.gcs.storage.Client", return_value=mock_client):
+            with mock.patch.object(gcs, "GCS_BUCKET", "my-bucket"), mock.patch.object(
+                gcs, "GCS_PREFIX", "folder"
+            ), mock.patch("libot.gcs.storage.Client", return_value=mock_client):
                 with self.assertLogs(gcs.logger, level="INFO") as log_cm:
                     gcs.upload_recordings_to_gcs("task-123", video_path)
 

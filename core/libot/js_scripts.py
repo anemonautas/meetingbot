@@ -1,4 +1,3 @@
-
 FIND_AND_CLICK_JS = """
     var searchTextOptions = arguments[0];
     var tag = arguments[1];

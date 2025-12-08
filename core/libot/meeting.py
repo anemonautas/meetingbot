@@ -7,16 +7,22 @@ from libot.logger import logger
 from libot.browser import safe_click, take_screenshot
 from libot.js_scripts import FILL_INPUT_JS, FIND_AND_CLICK_JS
 
+
 def _is_in_meeting(driver) -> bool:
     """
     Heurística para saber si ya estamos dentro de una reunión de Teams.
     """
     in_meeting_indicators = [
-        "Raise", "Levantar",
-        "Chat", "Conversación",
-        "React", "Reaccionar",
-        "Leave", "Salir",
-        "People", "Personas",
+        "Raise",
+        "Levantar",
+        "Chat",
+        "Conversación",
+        "React",
+        "Reaccionar",
+        "Leave",
+        "Salir",
+        "People",
+        "Personas",
     ]
     # 1) Buscar por texto en los botones (sin hacer click)
     for text in in_meeting_indicators:
@@ -44,9 +50,13 @@ def _is_in_meeting(driver) -> bool:
 def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
     bot_name = "Scribe!"
     logger.info(f"[{task_id}] 🚀 Intentando unirse a la reunión...")
+    take_screenshot(driver, task_id, f"{int(time.time())}_pre_join")
 
     JOIN_BUTTONS = [
-        "Join now", "Unirse ahora", "Rejoindre maintenant", "Jetzt teilnehmen",
+        "Join now",
+        "Unirse ahora",
+        "Rejoindre maintenant",
+        "Jetzt teilnehmen",
     ]
     NO_AUDIO_BTNS = [
         "Continue without audio or video",
@@ -60,8 +70,12 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
         "Audio de l'ordinateur",
     ]
     NAME_FIELDS = [
-        "name", "nombre", "nom", "Name",
-        "type your name", "escriba su nombre",
+        "name",
+        "nombre",
+        "nom",
+        "Name",
+        "type your name",
+        "escriba su nombre",
     ]
     DISMISS_BTNS = ["Dismiss", "Got it", "Close", "Cerrar"]
 
@@ -75,26 +89,36 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
         try:
             url = driver.current_url
         except Exception:
+            logger.error(f"[{task_id}] ⛔ Error al obtener URL.")
             pass
+
+        take_screenshot(driver, task_id, f"{int(time.time())}_loop")
 
         # 1. Login wall
         if "login.microsoft" in (url or ""):
             logger.error(f"[{task_id}] ⛔ Login wall detectado (requiere cuenta).")
-            take_screenshot(driver, task_id, "login_wall")
+            take_screenshot(driver, task_id, f"{int(time.time())}_login_wall")
             return False
 
         # 2. "Continue on this browser"
-        if safe_click(driver, "button",
-                      ["Continue on this browser", "Continuar en este explorador"], task_id):
+        if safe_click(
+            driver,
+            "button",
+            ["Continue on this browser", "Continuar en este explorador"],
+            task_id,
+        ):
             logger.info(f"[{task_id}] Click en 'Continue on this browser'.")
+            take_screenshot(driver, task_id, f"{int(time.time())}_continue_on_browser")
             time.sleep(3)
             continue
 
         # 3. Popups iniciales (no audio / no vídeo)
         safe_click(driver, "button", NO_AUDIO_BTNS, task_id)
+        take_screenshot(driver, task_id, f"{int(time.time())}_no_audio")
 
         # 4. Tooltips genéricos que estorban
         safe_click(driver, "button", DISMISS_BTNS, task_id)
+        take_screenshot(driver, task_id, f"{int(time.time())}_dismiss")
 
         # 5. Rellenar nombre (una sola vez)
         if not name_filled:
@@ -103,6 +127,7 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
                 if filled:
                     logger.info(f"[{task_id}] Nombre rellenado en el pre-join.")
                     name_filled = True
+                    take_screenshot(driver, task_id, f"{int(time.time())}_name_filled")
             except Exception:
                 pass
 
@@ -110,18 +135,20 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
         if not audio_selected:
             # Intento via botones
             clicked_audio = (
-                safe_click(driver, "div", COMPUTER_AUDIO, task_id) or
-                safe_click(driver, "span", COMPUTER_AUDIO, task_id) or
-                safe_click(driver, "button", COMPUTER_AUDIO, task_id)
+                safe_click(driver, "div", COMPUTER_AUDIO, task_id)
+                or safe_click(driver, "span", COMPUTER_AUDIO, task_id)
+                or safe_click(driver, "button", COMPUTER_AUDIO, task_id)
             )
             if clicked_audio:
                 logger.info(f"[{task_id}] Fuente 'Computer audio' seleccionada.")
                 audio_selected = True
                 time.sleep(0.5)
+                take_screenshot(driver, task_id, f"{int(time.time())}_audio_selected")
             else:
                 # Fallback JS
                 try:
-                    driver.execute_script("""
+                    driver.execute_script(
+                        """
                         var labels = document.querySelectorAll(
                             'label, div[role="radio"], div[role="checkbox"]'
                         );
@@ -134,7 +161,8 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
                                 break;
                             }
                         }
-                    """)
+                    """
+                    )
                 except Exception:
                     pass
 
@@ -143,7 +171,7 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
             if safe_click(driver, "button", JOIN_BUTTONS, task_id):
                 join_clicked = True
                 logger.info(f"[{task_id}] 🤞 Click en 'Join now'.")
-                take_screenshot(driver, task_id, "clicked_join")
+                take_screenshot(driver, task_id, f"{int(time.time())}_clicked_join")
                 # Tiempo para que cargue la reunión
                 time.sleep(5)
 
@@ -151,7 +179,7 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
         try:
             if _is_in_meeting(driver):
                 logger.info(f"[{task_id}] ✅ Reunión unida correctamente.")
-                take_screenshot(driver, task_id, "joined_success")
+                take_screenshot(driver, task_id, f"{int(time.time())}_joined_success")
                 return True
         except Exception:
             pass
@@ -159,5 +187,5 @@ def join_meeting(driver, task_id, max_wait: int = 120) -> bool:
         time.sleep(2)
 
     logger.error(f"[{task_id}] ❌ Timeout intentando unirse (>{max_wait}s).")
-    take_screenshot(driver, task_id, "fail_timeout")
+    take_screenshot(driver, task_id, f"{int(time.time())}_fail_timeout")
     return False

@@ -1,5 +1,5 @@
-# test_chrome_min.py
 from libot.recorder import record_task
+
 
 def main():
     record_task(
@@ -9,6 +9,7 @@ def main():
         record_audio=False,
         record_video=False,
     )
+
 
 if __name__ == "__main__":
     main()

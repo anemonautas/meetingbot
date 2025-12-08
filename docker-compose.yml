@@ -6,10 +6,10 @@ services:
       - GCS_PREFIX=
       - GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/creds.json
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - MEETING_URL=https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZDJhMzY1YTQtMDQwZS00MjZhLWFkMjMtYWM0ZmFlZjBhMDMy%40thread.v2/0?context=%7b%22Tid%22%3a%2234ff9106-4c49-4535-98fa-c6566a9218f8%22%2c%22Oid%22%3a%22619a0a3b-ad73-47cd-b36b-07e588d11db1%22%7d
     ports:
       - "8080:8080"
     volumes:
       - /home/adrian/eureka/anemonautas_sl/tango_recorder/.keys/key.json:/etc/secrets/creds.json:ro
       - /home/adrian/eureka/anemonautas_sl/tango_recorder/recordings:/output
     shm_size: "2g"
-    restart: unless-stopped

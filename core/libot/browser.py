@@ -2,21 +2,25 @@ import os
 from libot.logger import logger
 from libot.config import OUTPUT_DIR
 from libot.js_scripts import FIND_AND_CLICK_JS
+from datetime import datetime
 
 
 def take_screenshot(driver, task_id, name):
     try:
         path = os.path.join(OUTPUT_DIR, task_id, f"{name}.png")
         driver.save_screenshot(path)
-    except: pass
+    except:
+        pass
+
 
 def safe_click(driver, tag_type, text_options, task_id):
     """
     Attempts to find an element by text and click it using JS.
     Supports list of tags to try if specific tag fails.
     """
-    if isinstance(text_options, str): text_options = [text_options]
-    
+    if isinstance(text_options, str):
+        text_options = [text_options]
+
     # If generic 'button' requested, try specific semantic tags used by Teams
     tags_to_try = [tag_type]
     if tag_type == "button":
@@ -27,6 +31,9 @@ def safe_click(driver, tag_type, text_options, task_id):
             res = driver.execute_script(FIND_AND_CLICK_JS, text_options, tag, True)
             if res == "clicked":
                 logger.info(f"[{task_id}] 🖱️  CLICKED: {text_options[0]} ({tag})")
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                take_screenshot(driver, task_id, f"click_{text_options[0]}_{timestamp}")
                 return True
         except Exception:
             pass
