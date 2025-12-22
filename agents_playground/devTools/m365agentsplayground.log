@@ -1,0 +1,73 @@
+debug Telemetry: agents-playground-cli/cliStart {"cleanProperties":{"isExec":"true","argv":"<REDACTED: user-file-path>/agentsplayground,-e,http://localhost:3000/api/messages,-c,msteams,--client-id,d81fd1de-037f-4542-85f8-c93abe162a4a,--client-secret,<REDACTED: credential>.~bbRMZFsFvcEb,--tenant-id,34ff9106-4c49-4535-98fa-c6566a9218f8"}}
+
+log Listening on 56150
+log Microsoft 365 Agents Playground is being launched for you to debug the app: http://localhost:56150
+debug Telemetry: agents-playground-server/configAuth {"cleanProperties":{"authConfig":"{\"clientId\":\"d81fd1de-037f-4542-85f8-c93abe162a4a\",\"clientSecret\":\"<REDACTED: credential>.~bbRMZFsFvcEb\",\"tenantId\":\"34ff9106-4c49-4535-98fa-c6566a9218f8\"}"}}
+
+debug started web socket client
+debug started web socket client
+log Waiting for connection of endpoint: http://localhost:3000/api/messages
+log waiting for 1 resources: http://localhost:3000/api/messages
+log wait-on(756836) complete
+log Authentication enabled, client ID: d81fd1de-037f-4542-85f8-c93abe162a4a, tenant ID: 34ff9106-4c49-4535-98fa-c6566a9218f8.
+log Events recording disabled.
+debug Telemetry: agents-playground-server/eventsRecording {"cleanProperties":{"enabled":"false"}}
+
+debug Telemetry: agents-playground-server/getConfig {"cleanProperties":{"internalConfig":"{\"locale\":\"es-ES\",\"localTimezone\":\"Europe/Paris\",\"channelId\":\"msteams\",\"authConfig\":{\"clientId\":\"d81fd1de-037f-4542-85f8-c93abe162a4a\",\"clientSecret\":\"U2FsdGVkX1+<REDACTED: credential>+8Ee7U3al+<REDACTED: credential>==\",\"tenantId\":\"34ff9106-4c49-4535-98fa-c6566a9218f8\"},\"debugConfig\":{\"eventsRecordingEnabled\":false}}"}}
+
+error Error acquiring access token ServerError: invalid_client: Error(s): 7000232 - Timestamp: 2025-12-16 18:26:03Z - Description: AADSTS7000232: MSI identity (d81fd1de-037f-4542-85f8-c93abe162a4a) should not use ClientSecretCredential. Trace ID: da1b0066-ad26-4602-870e-13ff59456c00 Correlation ID: 51007ae1-702e-4418-b54a-34af9bd6c106 Timestamp: 2025-12-16 18:26:03Z - Correlation ID: 51007ae1-702e-4418-b54a-34af9bd6c106 - Trace ID: da1b0066-ad26-4602-870e-13ff59456c00
+    at ResponseHandler.validateTokenResponse (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1556691)
+    at ClientCredentialClient.executeTokenRequest (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1664952)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConfidentialClientApplication.acquireTokenByClientCredential (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1710159)
+    at async AuthManager.getAccessToken (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2122973)
+    at async InstallationUserBotAccessor.getAuthHeader (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2205658)
+    at async InstallationUserBotAccessor.generateHeaders (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2206004)
+    at async InstallationUserBotAccessor.sendActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2204383)
+    at async InstallationUserBotAccessor.sendInstallationUpdateActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2141952) {
+  errorCode: 'invalid_client',
+  errorMessage: 'Error(s): 7000232 - Timestamp: 2025-12-16 18:26:03Z - Description: AADSTS7000232: MSI identity (d81fd1de-037f-4542-85f8-c93abe162a4a) should not use ClientSecretCredential. Trace ID: da1b0066-ad26-4602-870e-13ff59456c00 Correlation ID: 51007ae1-702e-4418-b54a-34af9bd6c106 Timestamp: 2025-12-16 18:26:03Z - Correlation ID: 51007ae1-702e-4418-b54a-34af9bd6c106 - Trace ID: da1b0066-ad26-4602-870e-13ff59456c00',
+  subError: '',
+  errorNo: 7000232,
+  status: 400,
+  correlationId: '51007ae1-702e-4418-b54a-34af9bd6c106'
+}
+debug Telemetry: agents-playground-server/error {"cleanProperties":{"stack":"\"Error: Request failed with status code 401\\n    at exports.UserBotError (<REDACTED: user-file-path>:2:1233494)\\n    at InstallationUserBotAccessor.handleAxiosError (<REDACTED: user-file-path>:2:2205544)\\n    at InstallationUserBotAccessor.sendActivity (<REDACTED: user-file-path>:2:2204817)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async InstallationUserBotAccessor.sendInstallationUpdateActivity (<REDACTED: user-file-path>:2:2141952)\"","message":"\"Request failed with status code 401\"","code":"\"UserBotError\"","innerHttpError":"{\"statusCode\":401,\"body\":\"401: Unauthorized\"}"}}
+
+log InternalServiceError: Request failed with status code 401
+    at exports.UserBotError (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:1233494)
+    at InstallationUserBotAccessor.handleAxiosError (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2205544)
+    at InstallationUserBotAccessor.sendActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2204817)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async InstallationUserBotAccessor.sendInstallationUpdateActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2141952) {
+  code: 'UserBotError',
+  innerHttpError: { statusCode: 401, body: '401: Unauthorized' }
+}
+error Error acquiring access token ServerError: invalid_client: Error(s): 7000232 - Timestamp: 2025-12-16 18:26:03Z - Description: AADSTS7000232: MSI identity (d81fd1de-037f-4542-85f8-c93abe162a4a) should not use ClientSecretCredential. Trace ID: 686b040b-1254-407f-8cd1-4a742d4d7d00 Correlation ID: 4eb43536-5670-438d-8a3a-a5bb16f34186 Timestamp: 2025-12-16 18:26:03Z - Correlation ID: 4eb43536-5670-438d-8a3a-a5bb16f34186 - Trace ID: 686b040b-1254-407f-8cd1-4a742d4d7d00
+    at ResponseHandler.validateTokenResponse (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1556691)
+    at ClientCredentialClient.executeTokenRequest (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1664952)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConfidentialClientApplication.acquireTokenByClientCredential (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:1710159)
+    at async AuthManager.getAccessToken (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2122973)
+    at async ConversationUpdateUserBotAccessor.getAuthHeader (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2205658)
+    at async ConversationUpdateUserBotAccessor.generateHeaders (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2206004)
+    at async ConversationUpdateUserBotAccessor.sendActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2204383)
+    at async ConversationUpdateUserBotAccessor.sendInstallationMemberAddedActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:325509) {
+  errorCode: 'invalid_client',
+  errorMessage: 'Error(s): 7000232 - Timestamp: 2025-12-16 18:26:03Z - Description: AADSTS7000232: MSI identity (d81fd1de-037f-4542-85f8-c93abe162a4a) should not use ClientSecretCredential. Trace ID: 686b040b-1254-407f-8cd1-4a742d4d7d00 Correlation ID: 4eb43536-5670-438d-8a3a-a5bb16f34186 Timestamp: 2025-12-16 18:26:03Z - Correlation ID: 4eb43536-5670-438d-8a3a-a5bb16f34186 - Trace ID: 686b040b-1254-407f-8cd1-4a742d4d7d00',
+  subError: '',
+  errorNo: 7000232,
+  status: 400,
+  correlationId: '4eb43536-5670-438d-8a3a-a5bb16f34186'
+}
+debug Telemetry: agents-playground-server/error {"cleanProperties":{"stack":"\"Error: Request failed with status code 401\\n    at exports.UserBotError (<REDACTED: user-file-path>:2:1233494)\\n    at ConversationUpdateUserBotAccessor.handleAxiosError (<REDACTED: user-file-path>:2:2205544)\\n    at ConversationUpdateUserBotAccessor.sendActivity (<REDACTED: user-file-path>:2:2204817)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async ConversationUpdateUserBotAccessor.sendInstallationMemberAddedActivity (<REDACTED: user-file-path>:5:325509)\"","message":"\"Request failed with status code 401\"","code":"\"UserBotError\"","innerHttpError":"{\"statusCode\":401,\"body\":\"401: Unauthorized\"}"}}
+
+log InternalServiceError: Request failed with status code 401
+    at exports.UserBotError (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:1233494)
+    at ConversationUpdateUserBotAccessor.handleAxiosError (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2205544)
+    at ConversationUpdateUserBotAccessor.sendActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:2:2204817)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ConversationUpdateUserBotAccessor.sendInstallationMemberAddedActivity (/home/adrian/eureka/anemonautas_sl/tango_recorder/agents_playground/node_modules/@microsoft/m365agentsplayground/dist/index.js:5:325509) {
+  code: 'UserBotError',
+  innerHttpError: { statusCode: 401, body: '401: Unauthorized' }
+}

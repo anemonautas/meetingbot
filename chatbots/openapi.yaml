@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: API for MS Teams bot
+  version: 1.0.0
+
+paths:
+  /healthz/:
+    get:
+      description: Health check endpoint
+      x-oui-security:
+        id:
+          - none
+      responses:
+        '200':
+          description: OK
+  /api/messages:
+    post:
+      summary: Receives a custom message payload
+      operationId: postMessage
+      x-oui-security:
+        id:
+          - none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessagePayload'
+      responses:
+        '200':
+          description: Successfully received the message
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: apiKey
+      in: header
+
+  schemas:
+    MessagePayload:
+      type: object
+      properties:
+        body:
+          type: object
+          properties:
+            text:
+              type: string
+            textFormat:
+              type: string
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attachment'
+        type:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        from:
+          $ref: '#/components/schemas/User'
+        conversation:
+          $ref: '#/components/schemas/Conversation'
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entity'
+    Attachment:
+      type: object
+      properties:
+        contentType:
+          type: string
+        contentUrl:
+          type: string
+        content:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        aadObjectId:
+          type: string
+    Conversation:
+      type: object
+      properties:
+        conversationType:
+          type: string
+        tenantId:
+          type: string
+        id:
+          type: string
+    Entity:
+      type: object
+      properties:
+        locale:
+          type: string
+        country:
+          type: string
+        timezone:
+          type: string
+        type:
+          type: string
+x-audience: internal
+x-oui-security:
+  definitions:
+    - m2m:
+        location: query
+        name: api_key
+        rewriteKey: remove
+    - auth0: []
+    - none: []
+  id:
+    - m2m
+    - auth0

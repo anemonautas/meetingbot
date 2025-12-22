@@ -1,13 +1,26 @@
 from pydub import AudioSegment
 
+def _ensure_whole_frames(audio: AudioSegment) -> AudioSegment:
+    """
+    Trim trailing bytes so that the length of the raw data
+    is a whole number of frames for the current sample_width * channels.
+    This avoids audioop.error: not a whole number of frames.
+    """
+    frame_size = audio.sample_width * audio.channels  # bytes per frame
+    if frame_size == 0:
+        return audio  # defensive
+
+    remainder = len(audio._data) % frame_size
+    if remainder:
+        trimmed_data = audio._data[:-remainder]
+        audio = audio._spawn(trimmed_data)
+
+    return audio
+
 
 def compress_audio(input_path: str, output_path: str, bitrate: str = "128k") -> None:
-    # Load WAV (or other format)
     audio = AudioSegment.from_file(input_path)
-
-    # Optionally downsample to mono and lower sample rate
+    audio = _ensure_whole_frames(audio)
     audio = audio.set_channels(1)  # mono
     audio = audio.set_frame_rate(16000)  # 16 kHz
-
-    # Export as MP3 with chosen bitrate (lower = more compression)
     audio.export(output_path, format="mp3", bitrate=bitrate)

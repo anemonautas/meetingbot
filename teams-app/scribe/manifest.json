@@ -1,0 +1,72 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.23/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.23",
+  "version": "1.2.3",
+  "id": "feecbb4e-790a-4c49-b61c-1f5b2ba83f8c",
+  "developer": {
+    "name": "elmy",
+    "websiteUrl": "https://www.elmy.fr",
+    "privacyUrl": "https://elmy.fr/protection-donnees",
+    "termsOfUseUrl": "https://elmy.fr/mentions-legales"
+  },
+  "name": {
+    "short": "Scribe ",
+    "full": "Scribe, assistance virtuel pendant les meetings"
+  },
+  "description": {
+    "short": "Scribe",
+    "full": "Un chatbot pour jouer aux scribes."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#60A18E",
+   "defaultGroupCapability": {
+     "groupchat": "bot",
+    "meetings": "bot"
+  },
+
+  "bots": [
+    {
+      "botId": "d5f790d2-7946-481d-88f1-650d7f319b83",
+      "needsChannelSelector": false,
+      "isNotificationOnly": false,
+      "supportsFiles": true,
+      
+      "scopes": [
+        "team",
+        "personal",
+        "groupChat"
+      ],
+
+      "commandLists": [
+        {
+          "scopes": [
+            "team",
+            "personal"
+          ],
+          "commands": [
+            {
+              "title": "Help",
+              "description": "Displays this help message"
+            },
+            {
+              "title": "reload",
+              "description": "Fait que Marty oublie la conversation pour recommencer de 0"
+            },
+            {
+              "title": "transcribe",
+              "description": "Transcript ici"
+          }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": [],
+  "validDomains": [
+    "bcmenergyfrance.sharepoint.com",
+    "loop.microsoft.com"
+  ]
+}

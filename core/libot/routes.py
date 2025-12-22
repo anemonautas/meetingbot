@@ -1,8 +1,9 @@
 import threading
 import uuid
-import os
 from datetime import datetime
 from flask import Blueprint, request, jsonify, send_file
+
+from libot.config import SEGMENT_SECONDS
 from libot.recorder import record_task
 
 api = Blueprint("api", __name__)
@@ -27,6 +28,7 @@ def trigger_bot():
             task_id,
             data.get("record_audio", True),
             data.get("record_video", False),
+            data.get("segment_seconds", SEGMENT_SECONDS),
         ),
     )
     t.daemon = True

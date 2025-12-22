@@ -37,11 +37,11 @@ def trigger_meeting_recorder(request):
     # Prepare environment variables for the job container
     # Note: We convert all values to strings as EnvVars must be strings
     env_vars = {
-        "meeting_url": meeting_url,
-        "duration": str(request_json.get('duration', 1800)),
-        "record_audio": str(request_json.get('record_audio', True)).lower(),
-        "record_video": str(request_json.get('record_video', False)).lower(),
-        "task_id": task_id
+        "MEETING_URL": meeting_url,
+        "DURATION": str(request_json.get('duration', 1800)),
+        "RECORD_AUDIO": str(request_json.get('record_audio', True)).lower(),
+        "RECORD_VIDEO": str(request_json.get('record_video', False)).lower(),
+        "TASK_ID": task_id
     }
 
     logger.info(f"Preparing to trigger job {JOB_NAME} for task {task_id}")

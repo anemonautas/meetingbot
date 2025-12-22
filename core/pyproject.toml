@@ -12,6 +12,7 @@ dependencies = [
     "google-genai>=1.52.0",
     "gunicorn>=23.0.0",
     "pydub>=0.25.1",
+    "resend>=2.19.0",
     "selenium>=4.38.0",
     "webdriver-manager>=4.0.2",
 ]

@@ -1,4 +1,17 @@
 services:
+
+  chatbot:
+    build: ./chatbots/.
+    env_file:
+      - .env
+    environment:
+      - PORT=5005
+      - BOT_NAME=SCRIBE
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  
+    ports:
+      - "5005:5005"
+
   meeting-bot:
     build: ./core/.
     environment:
@@ -6,7 +19,8 @@ services:
       - GCS_PREFIX=
       - GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/creds.json
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - MEETING_URL=https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZDJhMzY1YTQtMDQwZS00MjZhLWFkMjMtYWM0ZmFlZjBhMDMy%40thread.v2/0?context=%7b%22Tid%22%3a%2234ff9106-4c49-4535-98fa-c6566a9218f8%22%2c%22Oid%22%3a%22619a0a3b-ad73-47cd-b36b-07e588d11db1%22%7d
+      - MEETING_URL=https://teams.microsoft.com/l/meetup-join/19%3ameeting_YWI1NDk5N2ItMzczYy00YjRhLWJiZjktZGJjNjY0ZGFmZmU0%40thread.v2/0?context=%7b%22Tid%22%3a%2234ff9106-4c49-4535-98fa-c6566a9218f8%22%2c%22Oid%22%3a%22619a0a3b-ad73-47cd-b36b-07e588d11db1%22%7d
+      - SENDER_API_KEY=${SENDER_API_KEY}
     ports:
       - "8080:8080"
     volumes:
